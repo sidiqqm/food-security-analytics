@@ -1,0 +1,12 @@
+item_code,item_name,commodity_group,strategic_reason,is_selected
+15,Wheat,Cereals,Largest globally traded cereal; critical for bread and pasta production,true
+27,Rice paddy,Cereals,Staple food for 3.5+ billion people in Asia,true
+56,Maize (corn),Cereals,Highest global production volume; food + feed + biofuel,true
+44,Barley,Cereals,Key livestock feed and malting grain; strategic buffer crop,true
+236,Soybeans,Protein Crops,Dominant global protein and vegetable oil source,true
+187,Pulses Total,Protein Crops,Critical affordable protein source for developing nations,true
+116,Potatoes,Roots and Tubers,Fourth largest food crop globally by production,true
+125,Sweet potatoes,Roots and Tubers,Important subsistence crop in Sub-Saharan Africa,true
+135,Cassava,Roots and Tubers,Critical food security crop for tropical countries,true
+254,Palm oil,Oil Crops,Highest volume vegetable oil globally; grown in tropical regions,true
+156,Sugar cane,Sugar Crops,Major caloric energy source; grown in 100+ tropical countries,true

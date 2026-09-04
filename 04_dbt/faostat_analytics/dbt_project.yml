@@ -1,0 +1,146 @@
+# =============================================================================
+# dbt_project.yml — Konfigurasi Utama Project
+# =============================================================================
+# Dokumentasi: https://docs.getdbt.com/reference/dbt_project.yml
+
+name: 'faostat_analytics'
+version: '1.0.0'
+config-version: 2
+
+# Profile yang digunakan untuk koneksi BigQuery
+# Profile didefinisikan di ~/.dbt/profiles.yml (lihat section 8.2)
+profile: 'faostat_analytics'
+
+# Path konfigurasi
+model-paths:    ["models"]
+analysis-paths: ["analyses"]
+test-paths:     ["tests"]
+seed-paths:     ["seeds"]
+macro-paths:    ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path:  "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# =============================================================================
+# VARIABLES — Business constants yang digunakan di seluruh project
+# =============================================================================
+vars:
+  # Project period
+  project_year_start:        1991
+  project_year_start_fbs:    2010    # FBS current methodology mulai 2010
+  project_year_end:          2022
+
+  # Area code threshold: kode < 1000 = individual country
+  country_area_code_max:     999
+
+  # Commodity Item Codes (QCL)
+  strategic_item_codes:
+    - 15    # Wheat
+    - 27    # Rice, paddy
+    - 56    # Maize (corn)
+    - 44    # Barley
+    - 236   # Soybeans
+    - 187   # Pulses, Total
+    - 116   # Potatoes
+    - 125   # Sweet potatoes
+    - 135   # Cassava
+    - 254   # Palm oil
+    - 156   # Sugar cane
+
+  # Element Codes — Production (QCL)
+  element_code_area_harvested: 5312
+  element_code_yield:          5417
+  element_code_production:     5510
+
+  # Element Codes — Trade (TCL)
+  element_code_export_qty:   5610
+  element_code_export_val:   5622
+  element_code_import_qty:   5910
+  element_code_import_val:   5922
+
+  # Element Codes — Food Balance Sheets
+  element_code_fbs_production:  5511
+  element_code_fbs_import_qty:  5611
+  element_code_fbs_export_qty:  5911
+  element_code_fbs_supply_qty:  5072
+  element_code_fbs_food_qty:    5301
+  element_code_fbs_kcal:        664
+  element_code_fbs_protein:     674
+  element_code_fbs_fat:         684
+
+  # FBS Grand Total item code (all commodities combined)
+  fbs_grand_total_item_code: 2901
+
+# =============================================================================
+# MODEL CONFIGURATIONS
+# =============================================================================
+models:
+  faostat_analytics:
+
+    # --------------------------------------------------------------------------
+    # STAGING LAYER — Views; 1-to-1 mapping dari source tables
+    # --------------------------------------------------------------------------
+    staging:
+      +materialized: view
+      +schema: staging                # → dataset: dbt_faostat_dev__staging
+      +tags: ["staging", "faostat"]
+
+      faostat:
+        +tags: ["faostat_source"]
+
+    # --------------------------------------------------------------------------
+    # INTERMEDIATE LAYER — Views; business logic & joins
+    # --------------------------------------------------------------------------
+    intermediate:
+      +materialized: view
+      +schema: intermediate           # → dataset: dbt_faostat_dev__intermediate
+      +tags: ["intermediate"]
+
+    # --------------------------------------------------------------------------
+    # MARTS LAYER — Tables; dimension & fact tables (Star Schema)
+    # --------------------------------------------------------------------------
+    marts:
+      +materialized: table
+      +schema: marts                  # → dataset: dbt_faostat_dev__marts
+      +tags: ["marts"]
+
+      # Dimensi tables: views (kecil, tidak perlu table)
+      dimensions:
+        +materialized: table
+        +tags: ["dimension"]
+
+      # Fact tables: full table materialization
+      facts:
+        +materialized: table
+        +tags: ["fact"]
+
+    # --------------------------------------------------------------------------
+    # REPORTING LAYER — Tables; pre-aggregated untuk Power BI
+    # --------------------------------------------------------------------------
+    reporting:
+      +materialized: table
+      +schema: reporting              # → dataset: dbt_faostat_dev__reporting
+      +tags: ["reporting", "powerbi"]
+
+# =============================================================================
+# SEED CONFIGURATIONS
+# =============================================================================
+seeds:
+  faostat_analytics:
+    +schema: seeds
+    seed_commodity_selection:
+      +column_types:
+        item_code:        integer
+        item_name:        string
+        commodity_group:  string
+        strategic_reason: string
+    seed_fao_regions:
+      +column_types:
+        area_code:         integer
+        area_name:         string
+        fao_region:        string
+        income_group:      string
+        geographic_region: string

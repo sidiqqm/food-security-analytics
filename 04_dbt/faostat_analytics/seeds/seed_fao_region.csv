@@ -1,0 +1,83 @@
+area_code,area_name,fao_region,income_group,geographic_region
+4,Afghanistan,Asia,Low income,South Asia
+8,Albania,Europe,Upper middle income,Southern Europe
+12,Algeria,Africa,Lower middle income,Northern Africa
+24,Angola,Africa,Lower middle income,Sub-Saharan Africa
+32,Argentina,Americas,Upper middle income,South America
+36,Australia,Oceania,High income,Australia and New Zealand
+40,Austria,Europe,High income,Western Europe
+50,Bangladesh,Asia,Lower middle income,South Asia
+56,Belgium,Europe,High income,Western Europe
+68,Bolivia (Plurinational State of),Americas,Lower middle income,South America
+76,Brazil,Americas,Upper middle income,South America
+116,Cambodia,Asia,Lower middle income,South-eastern Asia
+120,Cameroon,Africa,Lower middle income,Sub-Saharan Africa
+124,Canada,Americas,High income,Northern America
+152,Chile,Americas,High income,South America
+156,China,Asia,Upper middle income,Eastern Asia
+170,Colombia,Americas,Upper middle income,South America
+180,Democratic Republic of the Congo,Africa,Low income,Sub-Saharan Africa
+188,Costa Rica,Americas,Upper middle income,Central America
+204,Benin,Africa,Low income,Sub-Saharan Africa
+218,Ecuador,Americas,Upper middle income,South America
+818,Egypt,Africa,Lower middle income,Northern Africa
+231,Ethiopia,Africa,Low income,Sub-Saharan Africa
+246,Finland,Europe,High income,Northern Europe
+250,France,Europe,High income,Western Europe
+276,Germany,Europe,High income,Western Europe
+288,Ghana,Africa,Lower middle income,Sub-Saharan Africa
+300,Greece,Europe,High income,Southern Europe
+320,Guatemala,Americas,Upper middle income,Central America
+324,Guinea,Africa,Low income,Sub-Saharan Africa
+356,India,Asia,Lower middle income,South Asia
+360,Indonesia,Asia,Lower middle income,South-eastern Asia
+364,Iran (Islamic Republic of),Asia,Upper middle income,Western Asia
+368,Iraq,Asia,Upper middle income,Western Asia
+372,Ireland,Europe,High income,Northern Europe
+376,Israel,Asia,High income,Western Asia
+380,Italy,Europe,High income,Southern Europe
+388,Jamaica,Americas,Upper middle income,Caribbean
+392,Japan,Asia,High income,Eastern Asia
+400,Jordan,Asia,Upper middle income,Western Asia
+404,Kenya,Africa,Lower middle income,Sub-Saharan Africa
+408,Korea DPR,Asia,Low income,Eastern Asia
+410,Republic of Korea,Asia,High income,Eastern Asia
+422,Lebanon,Asia,Lower middle income,Western Asia
+454,Malawi,Africa,Low income,Sub-Saharan Africa
+458,Malaysia,Asia,Upper middle income,South-eastern Asia
+484,Mexico,Americas,Upper middle income,Central America
+504,Morocco,Africa,Lower middle income,Northern Africa
+508,Mozambique,Africa,Low income,Sub-Saharan Africa
+524,Nepal,Asia,Lower middle income,South Asia
+528,Netherlands,Europe,High income,Western Europe
+558,Nicaragua,Americas,Lower middle income,Central America
+566,Nigeria,Africa,Lower middle income,Sub-Saharan Africa
+578,Norway,Europe,High income,Northern Europe
+586,Pakistan,Asia,Lower middle income,South Asia
+604,Peru,Americas,Upper middle income,South America
+608,Philippines,Asia,Lower middle income,South-eastern Asia
+616,Poland,Europe,High income,Eastern Europe
+630,Puerto Rico,Americas,High income,Caribbean
+642,Romania,Europe,Upper middle income,Eastern Europe
+643,Russian Federation,Europe,Upper middle income,Eastern Europe
+682,Saudi Arabia,Asia,High income,Western Asia
+686,Senegal,Africa,Lower middle income,Sub-Saharan Africa
+710,South Africa,Africa,Upper middle income,Sub-Saharan Africa
+724,Spain,Europe,High income,Southern Europe
+729,Sudan,Africa,Low income,Northern Africa
+752,Sweden,Europe,High income,Northern Europe
+756,Switzerland,Europe,High income,Western Europe
+760,Syrian Arab Republic,Asia,Low income,Western Asia
+764,Thailand,Asia,Upper middle income,South-eastern Asia
+788,Tunisia,Africa,Lower middle income,Northern Africa
+792,Türkiye,Asia,Upper middle income,Western Asia
+800,Uganda,Africa,Low income,Sub-Saharan Africa
+804,Ukraine,Europe,Lower middle income,Eastern Europe
+826,United Kingdom,Europe,High income,Northern Europe
+840,United States of America,Americas,High income,Northern America
+858,Uruguay,Americas,High income,South America
+862,Venezuela (Bolivarian Republic of),Americas,Upper middle income,South America
+704,Viet Nam,Asia,Lower middle income,South-eastern Asia
+887,Yemen,Asia,Low income,Western Asia
+894,Zambia,Africa,Lower middle income,Sub-Saharan Africa
+716,Zimbabwe,Africa,Lower middle income,Sub-Saharan Africa

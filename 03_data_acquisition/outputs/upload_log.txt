@@ -1,0 +1,53 @@
+2026-09-04 18:22:06 | INFO     | ============================================================
+2026-09-04 18:22:06 | INFO     | Started: 2026-09-04 18:22:06
+2026-09-04 18:22:06 | INFO     | Target:  faostat-analytics.raw_faostat
+2026-09-04 18:22:06 | INFO     | ============================================================
+2026-09-04 18:22:06 | INFO     | 
+[1/5] Initializing BigQuery connection...
+2026-09-04 18:22:08 | INFO     |   BigQuery client initialized with Application Default Credentials
+2026-09-04 18:22:08 | INFO     |    Connected to GCP Project: faostat-analytics
+2026-09-04 18:22:08 | INFO     | 
+[2/5] Ensuring BigQuery dataset exists: raw_faostat
+2026-09-04 18:22:10 | INFO     |    Dataset ready: faostat-analytics.raw_faostat
+2026-09-04 18:22:10 | INFO     | 
+[3/5] Processing: PRODUCTION
+2026-09-04 18:22:10 | INFO     |   Schema loaded: 16 fields
+2026-09-04 18:22:10 | INFO     |   Loading CSV: QCL_Production_Crops_Livestock.csv
+2026-09-04 18:22:15 | INFO     |   Encoding: utf-8 | Shape: 4,209,110 × 14
+2026-09-04 18:22:16 | INFO     |   Converting to Parquet format for upload...
+2026-09-04 18:22:18 | INFO     |   Uploading 4,209,110 rows to faostat-analytics.raw_faostat.production_crops_livestock_raw...
+2026-09-04 18:22:43 | INFO     |    Upload complete: 4,209,110 rows in BigQuery
+2026-09-04 18:22:43 | INFO     |    Reconciliation [PASS]: CSV=4,209,110 | BQ=4,209,110 | Diff=0 (0.0000%)
+2026-09-04 18:22:43 | INFO     | 
+[4/5] Processing: TRADE
+2026-09-04 18:22:43 | INFO     |   Schema loaded: 16 fields
+2026-09-04 18:22:43 | INFO     |   Loading CSV: TCL_Trade_Crops_Livestock.csv
+2026-09-04 18:23:13 | INFO     |   Encoding: utf-8 | Shape: 17,143,873 × 14
+2026-09-04 18:23:14 | INFO     |   Converting to Parquet format for upload...
+2026-09-04 18:23:24 | INFO     |   Uploading 17,143,873 rows to faostat-analytics.raw_faostat.trade_crops_livestock_raw...
+2026-09-04 18:25:13 | INFO     |    Upload complete: 17,143,873 rows in BigQuery
+2026-09-04 18:25:13 | INFO     |    Reconciliation [PASS]: CSV=17,143,873 | BQ=17,143,873 | Diff=0 (0.0000%)
+2026-09-04 18:25:13 | INFO     | 
+[5/5] Processing: FBS
+2026-09-04 18:25:13 | INFO     |   Schema loaded: 15 fields
+2026-09-04 18:25:13 | INFO     |   Loading CSV: FBS_Food_Balance_Sheets.csv
+2026-09-04 18:25:21 | INFO     |   Encoding: utf-8 | Shape: 4,820,497 × 14
+2026-09-04 18:25:21 | INFO     |   Converting to Parquet format for upload...
+2026-09-04 18:25:23 | INFO     |   Uploading 4,820,497 rows to faostat-analytics.raw_faostat.food_balance_sheets_raw...
+2026-09-04 18:25:49 | INFO     |    Upload complete: 4,820,497 rows in BigQuery
+2026-09-04 18:25:49 | INFO     |    Reconciliation [PASS]: CSV=4,820,497 | BQ=4,820,497 | Diff=0 (0.0000%)
+2026-09-04 18:25:49 | INFO     | 
+[5/5] Saving reconciliation report...
+2026-09-04 18:25:49 | INFO     |    Reconciliation saved: D:\App\faostat-food-security-analytics\03_data_acquisition\outputs\row_count_reconciliation.csv
+2026-09-04 18:25:49 | INFO     | 
+============================================================
+2026-09-04 18:25:49 | INFO     | UPLOAD SUMMARY
+2026-09-04 18:25:49 | INFO     | ============================================================
+2026-09-04 18:25:49 | INFO     |    PRODUCTION      CSV:  4,209,110 | BQ:  4,209,110
+2026-09-04 18:25:49 | INFO     |    TRADE           CSV: 17,143,873 | BQ: 17,143,873
+2026-09-04 18:25:49 | INFO     |    FBS             CSV:  4,820,497 | BQ:  4,820,497
+2026-09-04 18:25:49 | INFO     | 
+ ALL DATASETS SUCCESSFULLY UPLOADED TO BIGQUERY
+2026-09-04 18:25:49 | INFO     |    Proceed to Stage 4: dbt Setup & Staging Layer
+2026-09-04 18:25:49 | INFO     | 
+Upload log saved: D:\App\faostat-food-security-analytics\03_data_acquisition\outputs\upload_log.txt

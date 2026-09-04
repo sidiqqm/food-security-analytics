@@ -1,0 +1,258 @@
+# =============================================================================
+# _sources.yml — FAOSTAT Raw Layer Source Definitions
+# =============================================================================
+# Mendefinisikan tabel-tabel Raw Layer sebagai sumber resmi untuk dbt.
+# Seluruh staging model menggunakan source() macro yang merujuk ke sini.
+
+version: 2
+
+sources:
+  - name: raw_faostat
+    description: >
+      Raw Layer — FAOSTAT (Food and Agriculture Organization of the United Nations)
+      agricultural and food statistics database. Data downloaded from
+      https://www.fao.org/faostat/ in CSV Normalized format and uploaded to
+      BigQuery without any transformations. Three datasets are used:
+      Production (QCL), Trade (TCL), and Food Balance Sheets (FBS).
+
+      Coverage: 180+ countries, 1961–2022 (varies by dataset).
+      Currency: USD (nominal, not inflation-adjusted).
+      Coordinate system: FAO country codes (not ISO 3166).
+
+    database: faostat-analytics          # GCP Project ID
+    schema: raw_faostat                  # BigQuery Dataset (Raw Layer)
+
+    # -------------------------------------------------------------------------
+    # Source Freshness: Berapa lama data boleh "stale" sebelum dbt warning/error?
+    # FAOSTAT merilis data annual, jadi kita set threshold 400 hari (>1 tahun)
+    # untuk warning, dan 800 hari untuk error.
+    # -------------------------------------------------------------------------
+    freshness:
+      warn_after: {count: 400, period: day}
+      error_after: {count: 800, period: day}
+    loaded_at_field: _loaded_at          # Kolom timestamp yang kita tambahkan saat upload
+
+    tables:
+
+      # -----------------------------------------------------------------------
+      # TABLE 1: Production Crops & Livestock (QCL)
+      # -----------------------------------------------------------------------
+      - name: production_crops_livestock_raw
+        identifier: production_crops_livestock_raw
+        description: >
+          FAOSTAT Production domain — Crops and Livestock Products (QCL).
+          Contains agricultural production data for crops and livestock products
+          reported by FAO member countries.
+
+          Grain: One row = one combination of (Area × Item × Element × Year).
+          Key elements: Production (t), Area Harvested (ha), Yield (hg/ha).
+          Period: 1961–2022. Coverage: 180+ countries.
+
+          IMPORTANT: Rows with Area_Code >= 1000 are regional aggregates
+          (not individual countries) and must be excluded when computing
+          country-level aggregations to prevent double-counting.
+
+        freshness:
+          warn_after: {count: 400, period: day}
+          error_after: {count: 800, period: day}
+
+        columns:
+          - name: Area_Code
+            description: >
+              FAO numeric code for country or regional aggregate.
+              Individual countries: codes 1–999.
+              Sub-regional groups: codes 1000–4999.
+              Major regions and World: codes 5000+.
+            tests:
+              - not_null
+
+          - name: Area
+            description: Full name of country or regional aggregate in English.
+            tests:
+              - not_null
+
+          - name: Item_Code
+            description: >
+              FAO numeric code for agricultural commodity or product.
+              E.g., 15 = Wheat, 27 = Rice paddy, 56 = Maize.
+            tests:
+              - not_null
+
+          - name: Item
+            description: Full English name of the agricultural commodity.
+            tests:
+              - not_null
+
+          - name: Element_Code
+            description: >
+              FAO code for measurement type.
+              5312 = Area Harvested, 5417 = Yield, 5510 = Production.
+            tests:
+              - not_null
+              - accepted_values:
+                  values: [5312, 5417, 5510]
+                  quote: false
+
+          - name: Element
+            description: Name of measurement type.
+            tests:
+              - accepted_values:
+                  values: ['Production', 'Area harvested', 'Yield']
+
+          - name: Year
+            description: Calendar year of observation (1961–2022).
+            tests:
+              - not_null
+
+          - name: Unit
+            description: Unit of measurement. t = tonnes, ha = hectares, hg/ha = hectograms per hectare.
+            tests:
+              - accepted_values:
+                  values: ['t', 'ha', 'hg/ha', '1000 No', 'Head', '1000 Head']
+
+          - name: Value
+            description: Numeric value. NULL when Flag = M (data missing).
+
+          - name: Flag
+            description: >
+              Data quality and source indicator.
+              Empty string = Official data (highest quality).
+              See FAOSTAT Flag Dictionary in data_understanding documentation.
+
+          - name: _loaded_at
+            description: Timestamp when row was uploaded to BigQuery Raw Layer.
+            tests:
+              - not_null
+
+      # -----------------------------------------------------------------------
+      # TABLE 2: Trade Crops & Livestock (TCL)
+      # -----------------------------------------------------------------------
+      - name: trade_crops_livestock_raw
+        identifier: trade_crops_livestock_raw
+        description: >
+          FAOSTAT Trade domain — Crops and Livestock Products (TCL).
+          Contains aggregated import and export data (quantity and value)
+          for agricultural commodities reported by FAO member countries.
+
+          Grain: One row = one (Area × Item × Element × Year).
+          Key elements: Export Quantity (t), Export Value (1000 USD),
+          Import Quantity (t), Import Value (1000 USD).
+          Period: 1986–2022. Coverage: 180+ countries.
+
+          Note: Value is in 1000 USD (nominal). Flag 'R' indicates
+          mirror trade estimates derived from partner country data.
+
+        freshness:
+          warn_after: {count: 400, period: day}
+          error_after: {count: 800, period: day}
+
+        columns:
+          - name: Area_Code
+            description: FAO numeric code for reporting country.
+            tests:
+              - not_null
+
+          - name: Item_Code
+            description: FAO commodity code. Consistent with QCL item codes.
+            tests:
+              - not_null
+
+          - name: Element_Code
+            description: >
+              5610 = Export Quantity, 5622 = Export Value,
+              5910 = Import Quantity, 5922 = Import Value.
+            tests:
+              - not_null
+              - accepted_values:
+                  values: [5610, 5622, 5910, 5922]
+                  quote: false
+
+          - name: Year
+            description: Calendar year of trade observation.
+            tests:
+              - not_null
+
+          - name: Unit
+            description: t for quantity elements; 1000 USD for value elements.
+
+          - name: Value
+            description: >
+              Trade value. For quantity: metric tonnes.
+              For value: thousands of US dollars (nominal, not inflation-adjusted).
+
+          - name: Flag
+            description: >
+              R = Mirror estimate (trade data from partner country, not reporter).
+              Empty = Official reported data.
+
+          - name: _loaded_at
+            description: Upload timestamp.
+            tests:
+              - not_null
+
+      # -----------------------------------------------------------------------
+      # TABLE 3: Food Balance Sheets (FBS — Current Methodology)
+      # -----------------------------------------------------------------------
+      - name: food_balance_sheets_raw
+        identifier: food_balance_sheets_raw
+        description: >
+          FAOSTAT Food Balances domain — Food Balance Sheets, Current Methodology (FBS).
+          Provides national food supply data expressed per capita, enabling
+          comparisons of dietary adequacy across countries.
+
+          Grain: One row = one (Area × Item × Element × Year).
+          Key element: Food supply (kcal/capita/day) — primary food security KPI.
+          Period: 2010–2022 (current methodology; do not mix with old FBSH).
+          Coverage: 170+ countries.
+
+          CRITICAL: FBS Item Codes are different from QCL Item Codes.
+          FBS items represent commodity GROUPS (e.g., 2511 = Wheat and products),
+          not individual commodities like QCL.
+          FBS production units are 1000 tonnes (not tonnes like QCL).
+
+        freshness:
+          warn_after: {count: 400, period: day}
+          error_after: {count: 800, period: day}
+
+        columns:
+          - name: Area_Code
+            description: FAO numeric country code.
+            tests:
+              - not_null
+
+          - name: Item_Code
+            description: >
+              FBS commodity group code. NOTE: These differ from QCL item codes.
+              2511 = Wheat and products, 2805 = Rice (milled equivalent),
+              2514 = Maize and products, 2901 = Grand Total (all commodities).
+            tests:
+              - not_null
+
+          - name: Element_Code
+            description: >
+              664 = Food supply (kcal/capita/day) [PRIMARY KPI],
+              674 = Protein supply (g/capita/day),
+              684 = Fat supply (g/capita/day),
+              5511 = Production (1000 t).
+            tests:
+              - not_null
+
+          - name: Year
+            description: Calendar year. FBS current methodology covers 2010–2022.
+            tests:
+              - not_null
+
+          - name: Unit
+            description: >
+              Varies by Element. kcal/capita/day for energy supply;
+              g/capita/day for protein and fat; 1000 t for production quantities.
+
+          - name: Value
+            description: >
+              Numeric value. Unit interpretation depends on the Element column.
+              Production values in 1000 tonnes (multiply by 1000 to match QCL).
+
+          - name: _loaded_at
+            description: Upload timestamp.
+            tests:
+              - not_null

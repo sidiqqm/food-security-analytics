@@ -1,0 +1,31 @@
+*.json
+gcp_service_account.json
+service_account*.json
+credentials*.json
+*_credentials.json
+
+# Raw data CSV — file terlalu besar untuk GitHub
+03_data_acquisition/raw/*.csv
+03_data_acquisition/raw/*.zip
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# OS
+.DS_Store
+Thumbs.db
+
+# dbt
+04_dbt/target/
+04_dbt/logs/
+04_dbt/dbt_packages/
+04_dbt/.user.yml
