@@ -1,18 +1,13 @@
 {{
     config(
         materialized = 'view',
-        description = """
-          Transformations applied at this layer:
-            1. Column renaming to snake_case
-            2. Explicit type casting (INT64, FLOAT64, STRING, TIMESTAMP)
-            Primary Key: production_sk (surrogate key)
-    """
+        description = """ """
     )
 }}
 
 with source as (
     select *
-    from {{source('raw_faostat', 'production_crops_livestock_raw')}}
+    from {{ source('raw_faostat', 'trade_crops_livestock_raw') }}
 ),
 
 renamed as (
@@ -24,7 +19,7 @@ renamed as (
                 'Element_Code',
                 'Year'
             ])
-        }} as production_sk,
+        }} as trade_sk,
 
         cast(Area_Code as INT64) as area_code,
         cast(Item_Code as INT64) as item_code,        

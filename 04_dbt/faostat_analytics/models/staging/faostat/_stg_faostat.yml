@@ -1,0 +1,383 @@
+version: 2
+
+models:
+
+  # MODEL 1: stg_faostat__production
+
+  - name: stg_faostat__production
+
+    description: >
+      Staging model for FAOSTAT Production data (QCL).
+      Performs source-level standardization including column renaming,
+      data type casting, basic flag cleaning, and technical metadata.
+      One row represents one observation at the grain of
+      area × item × element × year.
+      Business classifications and unit transformations are handled
+      in downstream intermediate models.
+
+    columns:
+
+      - name: production_sk
+        description: >
+          Surrogate key generated from area_code, item_code,
+          element_code, and year.
+        tests:
+          - unique
+          - not_null
+
+      - name: area_code
+        description: >
+          FAOSTAT numeric area code.
+
+        tests:
+          - not_null
+
+      - name: item_code
+        description: >
+          FAOSTAT commodity/item code.
+
+        tests:
+          - not_null
+
+      - name: element_code
+        description: >
+          FAOSTAT measurement element code.
+
+        tests:
+          - not_null
+
+      - name: year
+        description: >
+          Observation year.
+
+        tests:
+          - not_null
+
+      - name: area_name
+        description: >
+          FAOSTAT area name, including countries and regional aggregates.
+
+        tests:
+          - not_null
+
+      - name: area_code_m49
+        description: >
+          UN M49 numeric area code when available.
+
+      - name: item_name
+        description: >
+          FAOSTAT commodity/item name.
+
+        tests:
+          - not_null
+
+      - name: item_code_cpc
+        description: >
+          CPC classification code associated with the FAOSTAT item.
+
+      - name: element_name
+        description: >
+          FAOSTAT measurement element name.
+
+        tests:
+          - not_null
+
+      - name: unit_original
+        description: >
+          Original unit reported by FAOSTAT.
+
+      - name: value_original
+        description: >
+          Original numeric observation value from FAOSTAT before
+          any downstream unit standardization.
+
+      - name: flag_code
+        description: >
+          Standardized FAOSTAT observation flag.
+          Empty string represents a blank/null source flag.
+
+        tests:
+          - accepted_values:
+              values:
+                - ''
+                - A
+                - F
+                - E
+                - P
+                - I
+                - T
+                - C
+                - S
+                - R
+                - Q
+                - B
+                - N
+                - M
+                - X
+
+      - name: _raw_loaded_at
+        description: >
+          Timestamp when the record was loaded into the FAOSTAT
+          BigQuery raw layer.
+
+      - name: _source_file
+        description: >
+          Name or path of the source file from which the record originated.
+
+      - name: _stg_updated_at
+        description: >
+          Timestamp generated when the staging model was executed.
+
+
+  # MODEL 2: stg_faostat__trade
+
+  - name: stg_faostat__trade
+
+    description: >
+      Staging model for FAOSTAT Trade data (TCL).
+      Performs source-level standardization including column renaming,
+      data type casting, basic flag cleaning, and technical metadata.
+      One row represents one observation at the grain of
+      area × item × element × year.
+      Trade direction, measurement classification, unit standardization,
+      and mirror-trade interpretation are handled in downstream
+      intermediate models.
+
+    columns:
+
+      - name: trade_sk
+        description: >
+          Surrogate key generated from area_code, item_code,
+          element_code, and year.
+
+        tests:
+          - unique
+          - not_null
+
+      - name: area_code
+        description: >
+          FAOSTAT reporting area code.
+
+        tests:
+          - not_null
+
+      - name: item_code
+        description: >
+          FAOSTAT commodity/item code.
+
+        tests:
+          - not_null
+
+      - name: element_code
+        description: >
+          FAOSTAT trade element code.
+
+        tests:
+          - not_null
+
+      - name: year
+        description: >
+          Observation year.
+
+        tests:
+          - not_null
+
+      - name: area_name
+        description: >
+          FAOSTAT reporting area name.
+
+        tests:
+          - not_null
+
+      - name: area_code_m49
+        description: >
+          UN M49 numeric area code when available.
+
+      - name: item_name
+        description: >
+          FAOSTAT commodity/item name.
+
+        tests:
+          - not_null
+
+      - name: item_code_cpc
+        description: >
+          CPC classification code associated with the FAOSTAT item.
+
+      - name: element_name
+        description: >
+          FAOSTAT trade element name.
+
+        tests:
+          - not_null
+
+      - name: unit_original
+        description: >
+          Original unit reported by FAOSTAT.
+
+      - name: value_original
+        description: >
+          Original numeric observation value from FAOSTAT.
+
+      - name: flag_code
+        description: >
+          Standardized FAOSTAT observation flag.
+          Empty string represents a blank/null source flag.
+
+        tests:
+          - accepted_values:
+              values:
+                - ''
+                - A
+                - F
+                - E
+                - P
+                - I
+                - T
+                - C
+                - S
+                - R
+                - Q
+                - B
+                - N
+                - M
+                - X
+
+      - name: _raw_loaded_at
+        description: >
+          Timestamp when the record was loaded into the FAOSTAT
+          BigQuery raw layer.
+
+      - name: _source_file
+        description: >
+          Name or path of the source file from which the record originated.
+
+      - name: _stg_updated_at
+        description: >
+          Timestamp generated when the staging model was executed.
+
+
+  # MODEL 3: stg_faostat__food_balance_sheets
+
+  - name: stg_faostat__food_balance_sheets
+
+    description: >
+      Staging model for FAOSTAT Food Balance Sheets (FBS).
+      Performs source-level standardization including column renaming,
+      data type casting, basic flag cleaning, and technical metadata.
+      One row represents one observation at the grain of
+      area × item × element × year.
+      FBS-specific element classification, unit conversion,
+      KPI identification, and project-period filtering are handled
+      in downstream intermediate models.
+
+    columns:
+
+      - name: fbs_sk
+        description: >
+          Surrogate key generated from area_code, item_code,
+          element_code, and year.
+
+        tests:
+          - unique
+          - not_null
+
+      - name: area_code
+        description: >
+          FAOSTAT numeric area code.
+
+        tests:
+          - not_null
+
+      - name: item_code
+        description: >
+          FAOSTAT Food Balance Sheets commodity group code.
+          FBS item codes are distinct from QCL production item codes.
+
+        tests:
+          - not_null
+
+      - name: year
+        description: >
+          Observation year.
+
+        tests:
+          - not_null
+
+      - name: area_name
+        description: >
+          FAOSTAT area name.
+
+        tests:
+          - not_null
+
+      - name: area_code_m49
+        description: >
+          UN M49 numeric area code when available.
+
+      - name: item_name
+        description: >
+          FAOSTAT Food Balance Sheets commodity group name.
+
+        tests:
+          - not_null
+
+      - name: element_code
+        description: >
+          FAOSTAT Food Balance Sheets measurement element code.
+
+        tests:
+          - not_null
+
+      - name: element_name
+        description: >
+          FAOSTAT Food Balance Sheets measurement element name.
+
+        tests:
+          - not_null
+
+      - name: unit_original
+        description: >
+          Original unit reported by FAOSTAT.
+
+      - name: value_original
+        description: >
+          Original numeric observation value from FAOSTAT before
+          any downstream unit conversion.
+
+      - name: flag_code
+        description: >
+          Standardized FAOSTAT observation flag.
+          Empty string represents a blank/null source flag.
+
+        tests:
+          - accepted_values:
+              values:
+                - ''
+                - A
+                - F
+                - E
+                - P
+                - I
+                - T
+                - C
+                - S
+                - R
+                - Q
+                - B
+                - N
+                - M
+                - X
+
+      - name: _raw_loaded_at
+        description: >
+          Timestamp when the record was loaded into the FAOSTAT
+          BigQuery raw layer.
+
+      - name: _source_file
+        description: >
+          Name or path of the source file from which the record originated.
+
+      - name: _stg_updated_at
+        description: >
+          Timestamp generated when the staging model was executed.
