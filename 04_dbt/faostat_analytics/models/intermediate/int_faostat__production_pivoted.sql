@@ -2,9 +2,6 @@
     config(
         materialized = 'view',
         description  = """
-            Intermediate model: Pivot FAOSTAT production from long → wide format.
-
-            Input : stg_faostat__production (long format, one row per element per observation)
             Output: Wide format — one row per (area × item × year)
                     with production_tonnes, area_harvested_ha, yield_kg_ha as columns.
 
@@ -214,16 +211,13 @@ with_derived as (
         (case when area_harvested_ha is not null then 1 else 0 end) +
         (case when yield_kg_ha is not null then 1 else 0 end) as elements_complete_count,
 
-        round(
-            safe_divide(production_tonnes, area_harvested_ha) * 10.0,
-            2
-        ) as yield_kg_ha_computed,
+        round(safe_divide(production_tonnes, area_harvested_ha) * 1000.0, 2) as yield_kg_ha_computed,
 
-        -- Absolute deviation between reported and computed yield (%)
         round(
             abs(
                 safe_divide(
-                    yield_kg_ha - safe_divide(production_tonnes, area_harvested_ha) * 10.0,
+                    yield_kg_ha -
+                        safe_divide(production_tonnes, area_harvested_ha) * 1000.0,
                     nullif(yield_kg_ha, 0)
                 )
             ) * 100,

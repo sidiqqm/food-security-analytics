@@ -1,383 +1,314 @@
+# =============================================================================
+# _stg_faostat.yml — Staging Model Documentation & Tests
+# =============================================================================
+
 version: 2
 
 models:
 
   # MODEL 1: stg_faostat__production
-
   - name: stg_faostat__production
-
     description: >
       Staging model for FAOSTAT Production data (QCL).
-      Performs source-level standardization including column renaming,
-      data type casting, basic flag cleaning, and technical metadata.
-      One row represents one observation at the grain of
-      area × item × element × year.
-      Business classifications and unit transformations are handled
-      in downstream intermediate models.
+      One row per unique combination of country, commodity, measurement type, and year.
+      Includes yield unit conversion (hg/ha → kg/ha) and flag quality scoring.
+      Contains both country-level and regional aggregate rows;
+      use `where is_country = true` for country-level aggregations.
 
     columns:
-
       - name: production_sk
-        description: >
-          Surrogate key generated from area_code, item_code,
-          element_code, and year.
+        description: Surrogate key — SHA-256 hash of (area_code, item_code, element_code, year).
         tests:
           - unique
           - not_null
 
       - name: area_code
-        description: >
-          FAOSTAT numeric area code.
-
+        description: FAO numeric area code. Values < 1000 are individual countries.
         tests:
           - not_null
 
       - name: item_code
-        description: >
-          FAOSTAT commodity/item code.
-
+        description: FAO commodity code (e.g., 15 = Wheat, 27 = Rice paddy).
         tests:
           - not_null
 
       - name: element_code
-        description: >
-          FAOSTAT measurement element code.
-
+        description: FAO element code. 5312 = Area Harvested, 5417 = Yield, 5510 = Production.
         tests:
           - not_null
+          - accepted_values:
+              values: [5312, 5417, 5510]
+              quote: false
 
       - name: year
-        description: >
-          Observation year.
-
+        description: Observation year (integer).
         tests:
           - not_null
 
       - name: area_name
-        description: >
-          FAOSTAT area name, including countries and regional aggregates.
-
+        description: Full English name of country or regional aggregate.
         tests:
           - not_null
-
-      - name: area_code_m49
-        description: >
-          UN M49 numeric area code when available.
 
       - name: item_name
-        description: >
-          FAOSTAT commodity/item name.
-
+        description: Full English name of the commodity.
         tests:
           - not_null
-
-      - name: item_code_cpc
-        description: >
-          CPC classification code associated with the FAOSTAT item.
 
       - name: element_name
-        description: >
-          FAOSTAT measurement element name.
-
+        description: Name of the measurement type.
         tests:
           - not_null
+          - accepted_values:
+              values: ['Production', 'Area harvested', 'Yield']
 
       - name: unit_original
-        description: >
-          Original unit reported by FAOSTAT.
+        description: Original unit from FAOSTAT (t, ha, or hg/ha).
 
       - name: value_original
         description: >
-          Original numeric observation value from FAOSTAT before
-          any downstream unit standardization.
+          Original numeric value from FAOSTAT.
+          NULL when flag_code = 'M' (data not available).
+
+      - name: value_standardized
+        description: >
+          Unit-standardized value.
+          For Yield: value_original / 10 (converted hg/ha → kg/ha).
+          For Production and Area Harvested: identical to value_original.
+
+      - name: unit_standardized
+        description: Standardized unit label (tonnes, ha, or kg/ha).
+        tests:
+          - accepted_values:
+              values: ['tonnes', 'ha', 'kg/ha']
 
       - name: flag_code
         description: >
-          Standardized FAOSTAT observation flag.
-          Empty string represents a blank/null source flag.
-
+          FAOSTAT data quality flag. Empty string = Official (highest quality).
+          See FAOSTAT Flag Dictionary for full reference.
         tests:
           - accepted_values:
-              values:
-                - ''
-                - A
-                - F
-                - E
-                - P
-                - I
-                - T
-                - C
-                - S
-                - R
-                - Q
-                - B
-                - N
-                - M
-                - X
+              values: ['', 'A', 'F', 'E', 'P', 'I', 'T', 'C', 'S',
+                       'R', 'Q', 'B', 'N', 'M', 'X']
+
+      - name: flag_label
+        description: Human-readable label for flag_code (e.g., 'Official', 'Estimated').
+        tests:
+          - not_null
+
+      - name: flag_quality_score
+        description: >
+          Numeric quality score: 5 = Official, 4 = Aggregate/Standardized,
+          3 = Estimated, 2 = Imputed/Mirror, 1 = Not Significant, 0 = Missing.
+
+      - name: is_high_quality
+        description: True if flag_code is in ('', 'Q', 'A', 'S', 'C', 'X').
+        tests:
+          - not_null
+
+      - name: is_missing
+        description: True if flag_code = 'M' (no data available). False otherwise.
+        tests:
+          - not_null
+
+      - name: is_estimated
+        description: True if data is estimated (flag in E, F, I, P).
+
+      - name: area_type
+        description: >
+          Classification of area: 'Country', 'Sub-Regional Group',
+          or 'Global/Major Region'.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Country', 'Sub-Regional Group', 'Global/Major Region']
+
+      - name: is_country
+        description: >
+          True if area_code < 1000 (individual country, not regional aggregate).
+          ALWAYS filter on `is_country = true` when computing global aggregations
+          from this model to prevent double-counting.
+        tests:
+          - not_null
+
+      - name: element_category
+        description: Standardized element category label.
+        tests:
+          - accepted_values:
+              values: ['area_harvested', 'yield', 'production', 'other']
+
+      - name: is_in_project_period
+        description: True if year is within project analysis period (1991–2022).
 
       - name: _raw_loaded_at
-        description: >
-          Timestamp when the record was loaded into the FAOSTAT
-          BigQuery raw layer.
-
-      - name: _source_file
-        description: >
-          Name or path of the source file from which the record originated.
+        description: Timestamp when data was loaded into BigQuery Raw Layer.
 
       - name: _stg_updated_at
-        description: >
-          Timestamp generated when the staging model was executed.
-
+        description: Timestamp when this staging view was last compiled/run.
 
   # MODEL 2: stg_faostat__trade
-
   - name: stg_faostat__trade
-
     description: >
       Staging model for FAOSTAT Trade data (TCL).
-      Performs source-level standardization including column renaming,
-      data type casting, basic flag cleaning, and technical metadata.
-      One row represents one observation at the grain of
-      area × item × element × year.
-      Trade direction, measurement classification, unit standardization,
-      and mirror-trade interpretation are handled in downstream
-      intermediate models.
+      One row per unique combination of reporting country, commodity,
+      trade element (export/import quantity/value), and year.
+      Values remain in original units (tonnes for quantity, 1000 USD for value).
+      Note: Flag 'R' indicates mirror trade estimate from partner country.
 
     columns:
-
       - name: trade_sk
-        description: >
-          Surrogate key generated from area_code, item_code,
-          element_code, and year.
-
+        description: Surrogate key — hash of (area_code, item_code, element_code, year).
         tests:
           - unique
           - not_null
 
       - name: area_code
-        description: >
-          FAOSTAT reporting area code.
-
+        description: FAO reporting country code.
         tests:
           - not_null
 
       - name: item_code
-        description: >
-          FAOSTAT commodity/item code.
-
+        description: FAO commodity code. Consistent with QCL item codes.
         tests:
           - not_null
 
       - name: element_code
         description: >
-          FAOSTAT trade element code.
-
+          5610 = Export Quantity, 5622 = Export Value,
+          5910 = Import Quantity, 5922 = Import Value.
         tests:
           - not_null
+          - accepted_values:
+              values: [5610, 5622, 5910, 5922]
+              quote: false
 
       - name: year
-        description: >
-          Observation year.
-
+        description: Observation year.
         tests:
           - not_null
-
-      - name: area_name
-        description: >
-          FAOSTAT reporting area name.
-
-        tests:
-          - not_null
-
-      - name: area_code_m49
-        description: >
-          UN M49 numeric area code when available.
-
-      - name: item_name
-        description: >
-          FAOSTAT commodity/item name.
-
-        tests:
-          - not_null
-
-      - name: item_code_cpc
-        description: >
-          CPC classification code associated with the FAOSTAT item.
-
-      - name: element_name
-        description: >
-          FAOSTAT trade element name.
-
-        tests:
-          - not_null
-
-      - name: unit_original
-        description: >
-          Original unit reported by FAOSTAT.
-
-      - name: value_original
-        description: >
-          Original numeric observation value from FAOSTAT.
 
       - name: flag_code
-        description: >
-          Standardized FAOSTAT observation flag.
-          Empty string represents a blank/null source flag.
-
+        description: FAOSTAT quality flag. 'R' = mirror estimate is common in trade data.
         tests:
           - accepted_values:
-              values:
-                - ''
-                - A
-                - F
-                - E
-                - P
-                - I
-                - T
-                - C
-                - S
-                - R
-                - Q
-                - B
-                - N
-                - M
-                - X
+              values: ['', 'A', 'F', 'E', 'P', 'I', 'T', 'C', 'S',
+                       'R', 'Q', 'B', 'N', 'M', 'X']
 
-      - name: _raw_loaded_at
+      - name: element_category
+        description: export_quantity, export_value, import_quantity, or import_value.
+        tests:
+          - accepted_values:
+              values: ['export_quantity', 'export_value',
+                       'import_quantity', 'import_value', 'other']
+
+      - name: trade_direction
+        description: Export or Import.
+        tests:
+          - accepted_values:
+              values: ['Export', 'Import', 'Other']
+
+      - name: measurement_type
+        description: Quantity (in tonnes) or Value (in 1000 USD nominal).
+        tests:
+          - accepted_values:
+              values: ['Quantity', 'Value', 'Other']
+
+      - name: unit_standardized
+        description: tonnes (for quantity) or 1000_usd_nominal (for value).
+
+      - name: is_mirror_trade
         description: >
-          Timestamp when the record was loaded into the FAOSTAT
-          BigQuery raw layer.
+          True if flag_code = 'R'. Mirror trade data is estimated from
+          the partner country's reported data, not the reporter's own report.
+          Lower quality but fills gaps where reporter data is missing.
 
-      - name: _source_file
-        description: >
-          Name or path of the source file from which the record originated.
-
-      - name: _stg_updated_at
-        description: >
-          Timestamp generated when the staging model was executed.
-
+      - name: is_country
+        description: True if area_code < 1000 (individual country).
+        tests:
+          - not_null
 
   # MODEL 3: stg_faostat__food_balance_sheets
-
   - name: stg_faostat__food_balance_sheets
-
     description: >
-      Staging model for FAOSTAT Food Balance Sheets (FBS).
-      Performs source-level standardization including column renaming,
-      data type casting, basic flag cleaning, and technical metadata.
-      One row represents one observation at the grain of
-      area × item × element × year.
-      FBS-specific element classification, unit conversion,
-      KPI identification, and project-period filtering are handled
-      in downstream intermediate models.
+      Staging model for FAOSTAT Food Balance Sheets, current methodology (FBS).
+      One row per unique combination of country, commodity group, element, and year.
+      Covers 2010–2022.
+
+      IMPORTANT: FBS Item Codes differ from QCL Item Codes.
+      FBS production quantities converted from 1000 t → t at this layer.
+      Primary KPI: element_code 664 = Food supply (kcal/capita/day).
 
     columns:
-
       - name: fbs_sk
-        description: >
-          Surrogate key generated from area_code, item_code,
-          element_code, and year.
-
+        description: Surrogate key — hash of (area_code, item_code, element_code, year).
         tests:
           - unique
           - not_null
 
       - name: area_code
-        description: >
-          FAOSTAT numeric area code.
-
+        description: FAO numeric country code.
         tests:
           - not_null
 
       - name: item_code
         description: >
-          FAOSTAT Food Balance Sheets commodity group code.
-          FBS item codes are distinct from QCL production item codes.
-
-        tests:
-          - not_null
-
-      - name: year
-        description: >
-          Observation year.
-
-        tests:
-          - not_null
-
-      - name: area_name
-        description: >
-          FAOSTAT area name.
-
-        tests:
-          - not_null
-
-      - name: area_code_m49
-        description: >
-          UN M49 numeric area code when available.
-
-      - name: item_name
-        description: >
-          FAOSTAT Food Balance Sheets commodity group name.
-
+          FBS commodity GROUP code. Differs from QCL item codes.
+          2901 = Grand Total (use for country-level DES analysis).
+          2511 = Wheat and products, 2805 = Rice, 2514 = Maize.
         tests:
           - not_null
 
       - name: element_code
         description: >
-          FAOSTAT Food Balance Sheets measurement element code.
-
+          664 = Food supply kcal/capita/day [PRIMARY KPI],
+          674 = Protein supply g/capita/day,
+          684 = Fat supply g/capita/day,
+          5511 = Production (converted to tonnes in value_standardized).
         tests:
           - not_null
 
-      - name: element_name
-        description: >
-          FAOSTAT Food Balance Sheets measurement element name.
-
+      - name: year
+        description: Observation year. FBS current methodology: 2010–2022.
         tests:
           - not_null
-
-      - name: unit_original
-        description: >
-          Original unit reported by FAOSTAT.
 
       - name: value_original
-        description: >
-          Original numeric observation value from FAOSTAT before
-          any downstream unit conversion.
+        description: Original value from FAOSTAT before unit conversion.
 
-      - name: flag_code
+      - name: value_standardized
         description: >
-          Standardized FAOSTAT observation flag.
-          Empty string represents a blank/null source flag.
+          Unit-standardized value.
+          Quantity elements (production, import, export, supply):
+            value_original × 1000 (converted from 1000 t to tonnes).
+          Per-capita elements (kcal, protein, fat, food qty per capita):
+            identical to value_original (no conversion needed).
 
+      - name: unit_standardized
+        description: Standardized unit label after conversion.
+
+      - name: element_category
+        description: Standardized element category.
         tests:
           - accepted_values:
-              values:
-                - ''
-                - A
-                - F
-                - E
-                - P
-                - I
-                - T
-                - C
-                - S
-                - R
-                - Q
-                - B
-                - N
-                - M
-                - X
+              values: ['production', 'import_quantity', 'export_quantity',
+                       'domestic_supply', 'food_quantity',
+                       'dietary_energy_supply', 'protein_supply',
+                       'fat_supply', 'other']
 
-      - name: _raw_loaded_at
+      - name: is_dietary_energy_supply
         description: >
-          Timestamp when the record was loaded into the FAOSTAT
-          BigQuery raw layer.
+          True if element_code = 664 (kcal/capita/day).
+          This is the primary food security KPI tracked in this project.
 
-      - name: _source_file
+      - name: is_grand_total
         description: >
-          Name or path of the source file from which the record originated.
+          True if item_code = 2901 (Grand Total — all commodity groups combined).
+          Use this for country-level dietary adequacy analysis.
 
-      - name: _stg_updated_at
-        description: >
-          Timestamp generated when the staging model was executed.
+      - name: is_country
+        description: True if area_code < 1000.
+        tests:
+          - not_null
+
+      - name: is_in_project_period
+        description: True if year is in 2010–2022 (FBS current methodology period).
