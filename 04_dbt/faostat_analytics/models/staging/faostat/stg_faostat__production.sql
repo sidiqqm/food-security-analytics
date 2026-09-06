@@ -48,13 +48,14 @@ renamed as (
 with_derived as (
 
     select
-        *,
         {{ dbt_utils.generate_surrogate_key([
             'area_code',
             'item_code',
             'element_code',
             'year'
         ]) }} as production_sk,
+        
+        *,
 
         {{ flag_label('flag_code') }} as flag_label,
 

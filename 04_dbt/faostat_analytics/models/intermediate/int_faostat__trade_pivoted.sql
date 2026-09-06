@@ -19,113 +19,20 @@
                Do NOT convert 1000 USD to USD here — done in reporting layer.
 
             Grain: One row per (area_code × item_code × year)
+
+            Problem : null values should fill null in the column not 0
         """
     )
 }}
 
-with stg_source as (
-
-    select
-        *,
-
-        {{ flag_label('flag_code') }} as flag_label,
-        {{ flag_quality_score('flag_code') }} as flag_quality_score,
-
-        case
-            when flag_code in ('', 'Q', 'A', 'S', 'C', 'X') then true
-            else false
-        end as is_high_quality,
-
-        case
-            when flag_code = 'M' then true
-            else false
-        end as is_missing,
-
-        case
-            when flag_code = 'R' then true
-            else false
-        end as is_mirror_trade,
-
-        {{ area_type('area_code') }} as area_type,
-
-        case
-            when area_code < {{ var('country_area_code_max') }} then true
-            else false
-        end as is_country,
-
-        -- Categorize elements into:
-        -- - Trade direction: Export vs. Import
-        -- - Measurement type: Quantity vs. Value
-        case element_code
-            when {{ var('element_code_export_qty') }} then 'export_quantity'
-            when {{ var('element_code_export_val') }} then 'export_value'
-            when {{ var('element_code_import_qty') }} then 'import_quantity'
-            when {{ var('element_code_import_val') }} then 'import_value'
-            else 'other'
-        end as element_category,
-
-        -- Trade direction
-        case
-            when element_code in (
-                {{ var('element_code_export_qty') }},
-                {{ var('element_code_export_val') }}
-            ) then 'Export'
-            when element_code in (
-                {{ var('element_code_import_qty') }},
-                {{ var('element_code_import_val') }}
-            ) then 'Import'
-            else 'Other'
-        end as trade_direction,
-
-        -- Measurement type
-        case
-            when element_code in (
-                {{ var('element_code_export_qty') }},
-                {{ var('element_code_import_qty') }}
-            ) then 'Quantity'
-            when element_code in (
-                {{ var('element_code_export_val') }},
-                {{ var('element_code_import_val') }}
-            ) then 'Value'
-            else 'Other'
-        end as measurement_type,
-
-        -- STANDARDIZED UNIT LABELS
-        -- Values are NOT converted here — units are documented clearly.
-        -- Conversion to full USD (×1000) done in intermediate if needed.
-        case
-            when element_code in (
-                {{ var('element_code_export_qty') }},
-                {{ var('element_code_import_qty') }}
-            ) then 'tonnes'
-            when element_code in (
-                {{ var('element_code_export_val') }},
-                {{ var('element_code_import_val') }}
-            ) then '1000_usd_nominal'
-            else unit_original
-        end as unit_standardized,
-
-        -- No unit conversion needed at staging — value stays as-is
-        value_original as value_standardized,
-
-        -- PERIOD FLAG
-        case
-            when year between {{ var('project_year_start') }}
-                and {{ var('project_year_end') }}
-            then true
-            else false
-        end as is_in_project_period
-
-    from {{ ref('stg_faostat__trade') }}
-),
-
-stg_trade as (
+with stg_trade as (
 
     select *
-    from stg_source
+    from {{ ref('stg_faostat__trade') }}
     where
         is_country = true
         and is_in_project_period = true
+
 ),
 
 -- Bring in production data for Import Dependency Ratio calculation
@@ -158,33 +65,33 @@ trade_pivoted as (
         item_name,
         year,
 
-        -- ── EXPORT QUANTITY (tonnes) ──
+        -- EXPORT QUANTITY (tonnes)
         max(case when element_category = 'export_quantity'
-                 then value_standardized end)           as export_qty_tonnes,
+                 then value_standardized end) as export_qty_tonnes,
         max(case when element_category = 'export_quantity'
-                 then flag_code end)                    as flag_export_qty,
+                 then flag_code end) as flag_export_qty,
         max(case when element_category = 'export_quantity'
-                 then flag_quality_score end)           as quality_score_export_qty,
+                 then flag_quality_score end) as quality_score_export_qty,
 
-        -- ── EXPORT VALUE (1000 USD) ──
+        -- EXPORT VALUE (1000 USD)
         max(case when element_category = 'export_value'
-                 then value_standardized end)           as export_val_1000usd,
+                 then value_standardized end) as export_val_1000usd,
         max(case when element_category = 'export_value'
-                 then flag_code end)                    as flag_export_val,
+                 then flag_code end) as flag_export_val,
 
-        -- ── IMPORT QUANTITY (tonnes) ──
+        -- IMPORT QUANTITY (tonnes)
         max(case when element_category = 'import_quantity'
-                 then value_standardized end)           as import_qty_tonnes,
+                 then value_standardized end) as import_qty_tonnes,
         max(case when element_category = 'import_quantity'
-                 then flag_code end)                    as flag_import_qty,
+                 then flag_code end) as flag_import_qty,
         max(case when element_category = 'import_quantity'
-                 then flag_quality_score end)           as quality_score_import_qty,
+                 then flag_quality_score end) as quality_score_import_qty,
 
-        -- ── IMPORT VALUE (1000 USD) ──
+        -- IMPORT VALUE (1000 USD)
         max(case when element_category = 'import_value'
-                 then value_standardized end)           as import_val_1000usd,
+                 then value_standardized end) as import_val_1000usd,
         max(case when element_category = 'import_value'
-                 then flag_code end)                    as flag_import_val
+                 then flag_code end) as flag_import_val
 
     from stg_trade
     group by
@@ -208,7 +115,7 @@ trade_with_production as (
     left join stg_production_for_idr p
         on  t.area_code = p.area_code
         and t.item_code = p.item_code
-        and t.year      = p.year
+        and t.year = p.year
 
 ),
 
@@ -218,20 +125,18 @@ with_kpis as (
     select
         {{ dbt_utils.generate_surrogate_key([
             'area_code', 'item_code', 'year'
-        ]) }}                                           as trade_wide_sk,
+        ]) }} as trade_wide_sk,
 
         *,
 
-        -- ── NET TRADE QUANTITY (tonnes) ──
+        -- NET TRADE QUANTITY (tonnes)
         -- Positive = net exporter | Negative = net importer
-        coalesce(export_qty_tonnes, 0) -
-        coalesce(import_qty_tonnes, 0)                 as net_trade_qty_tonnes,
+        coalesce(export_qty_tonnes, 0) - coalesce(import_qty_tonnes, 0) as net_trade_qty_tonnes,
 
-        -- ── NET TRADE VALUE (1000 USD) ──
-        coalesce(export_val_1000usd, 0) -
-        coalesce(import_val_1000usd, 0)                as net_trade_val_1000usd,
+        -- NET TRADE VALUE (1000 USD)
+        coalesce(export_val_1000usd, 0) - coalesce(import_val_1000usd, 0) as net_trade_val_1000usd,
 
-        -- ── IMPORT DEPENDENCY RATIO (%) ──
+        -- IMPORT DEPENDENCY RATIO (%)
         -- Formula: Import / (Production + Import - Export) × 100
         -- Denominator = Domestic Utilization (total available supply for domestic use)
         --
@@ -257,9 +162,9 @@ with_kpis as (
                 200.0   -- Cap at 200%
             ),
             2
-        )                                               as import_dependency_ratio_pct,
+        ) as import_dependency_ratio_pct,
 
-        -- ── TRADE COVERAGE RATIO ──
+        -- TRADE COVERAGE RATIO
         -- Export Value / Import Value × 100
         -- > 100 means exports more than pay for imports (trade surplus)
         round(
@@ -268,17 +173,17 @@ with_kpis as (
                 nullif(coalesce(import_val_1000usd, 0), 0)
             ) * 100,
             2
-        )                                               as trade_coverage_ratio_pct,
+        ) as trade_coverage_ratio_pct,
 
-        -- ── NET EXPORTER FLAG ──
+        -- NET EXPORTER FLAG
         case
             when coalesce(export_qty_tonnes, 0) >
                  coalesce(import_qty_tonnes, 0)
             then true
             else false
-        end                                             as is_net_exporter,
+        end as is_net_exporter,
 
-        -- ── AVERAGE QUALITY SCORE ──
+        -- AVERAGE QUALITY SCORE
         round(
             (
                 coalesce(quality_score_export_qty, 0) +
@@ -289,9 +194,9 @@ with_kpis as (
                 0
             ),
             2
-        )                                               as quality_score_avg,
+        ) as quality_score_avg,
 
-        -- ── DATA AVAILABILITY FLAGS ──
+        -- DATA AVAILABILITY FLAGS
         case when export_qty_tonnes  is not null then true else false end as has_export_data,
         case when import_qty_tonnes  is not null then true else false end as has_import_data,
         case when production_tonnes  is not null then true else false end as has_production_for_idr

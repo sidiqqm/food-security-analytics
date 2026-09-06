@@ -38,7 +38,6 @@ renamed as (
 with_derived as (
 
     select
-        *,
         {{
             dbt_utils.generate_surrogate_key([
                 'area_code',
@@ -47,6 +46,8 @@ with_derived as (
                 'year'
             ])
         }} as fbs_sk,
+        
+        *,
 
         {{ flag_label('flag_code') }}               as flag_label,
         {{ flag_quality_score('flag_code') }}       as flag_quality_score,

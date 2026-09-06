@@ -61,14 +61,14 @@ renamed as (
 with_derived as (
 
     select
-        *,
-
         {{ dbt_utils.generate_surrogate_key([
             'area_code',
             'item_code',
             'element_code',
             'year'
         ]) }} as trade_sk,
+        
+        *,
 
         {{ flag_label('flag_code') }} as flag_label,
         {{ flag_quality_score('flag_code') }} as flag_quality_score,
@@ -149,8 +149,7 @@ with_derived as (
 
         -- No unit conversion needed at staging — value stays
         value_original as value_standardized,
-
-        -- PERIOD FLAG
+        
         case
             when year between {{ var('project_year_start') }}
                           and {{ var('project_year_end') }}

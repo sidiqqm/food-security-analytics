@@ -268,7 +268,8 @@ models:
           - not_null
 
       - name: year
-        description: Observation year. FBS current methodology: 2010–2022.
+        description: >
+          Observation year. FBS current methodology: 2010–2022.
         tests:
           - not_null
 
