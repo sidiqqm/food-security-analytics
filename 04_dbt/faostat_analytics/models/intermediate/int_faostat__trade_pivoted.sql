@@ -2,25 +2,20 @@
     config(
         materialized = 'view',
         description  = """
-            Input : stg_faostat__trade + stg_faostat__production (for IDR)
-            Output: Wide format — one row per (area × item × year) with
-                    export_qty, export_val, import_qty, import_val,
-                    net_trade_qty, net_trade_val, import_dependency_ratio
-
             Business Rules:
-            1. Import Dependency Ratio (IDR) requires production data from
-               stg_faostat__production joined on (area_code, item_code, year).
-               If production data is unavailable for a country-item-year,
-               IDR is NULL (not imputed or estimated).
+            1.  Import Dependency Ratio (IDR) membutuhkan data produksi dari stg_faostat__production yang di-join berdasarkan:
+                area_code, item_code, year
+                Jika data produksi tidak tersedia untuk kombinasi negara–komoditas–tahun tersebut, 
+                maka nilai IDR harus NULL, bukan diimputasi atau diestimasi.
             2. Net Trade = Export - Import. Negative = net importer.
-            3. IDR capped at 200% for display purposes — extreme values indicate
-               data quality issues (e.g., transit trade misclassification).
-            4. Values remain in original units: tonnes and 1000 USD.
-               Do NOT convert 1000 USD to USD here — done in reporting layer.
+            3. Nilai IDR yang sangat tinggi dapat mengindikasikan masalah
+                kualitas data (e.g., transit trade misclassification).
+            4. Nilai tetap menggunakan satuan asli: tonnes and 1000 USD.
+               Jangan mengubah 1000 USD to USD disini — lakukan di reporting layer.
 
             Grain: One row per (area_code × item_code × year)
 
-            Problem : null values should fill null in the column not 0
+            Problem : null harus tetap null jangan ubah jadi 0
         """
     )
 }}
@@ -35,8 +30,6 @@ with stg_trade as (
 
 ),
 
--- Bring in production data for Import Dependency Ratio calculation
--- We only need production_tonnes here
 stg_production_for_idr as (
 
     select

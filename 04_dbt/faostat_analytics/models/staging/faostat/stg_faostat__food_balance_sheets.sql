@@ -18,7 +18,7 @@ renamed as (
         cast(Year as INT64) as year,
 
         cast(Area as STRING) as area_name,
-        safe_cast(Area_Code_M49 as INT64) as area_code_m49,
+        safe_cast(Area_Code_M49 as STRING) as area_code_m49,
 
         cast(Item as STRING) as item_name,
 
