@@ -1,0 +1,84 @@
+version: 2
+
+models:
+
+  - name: fct_production
+    description: Production fact table — one row per country × commodity × year.
+    columns:
+      - name: production_sk
+        tests: [unique, not_null]
+      - name: area_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_area')
+              field: area_key
+      - name: item_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_item')
+              field: item_key
+      - name: year_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_year')
+              field: year_key
+      - name: production_tonnes
+        description: Must be non-negative when present.
+      - name: is_strategic_commodity
+        tests: [not_null]
+
+  - name: fct_trade
+    description: Trade fact table with Import Dependency Ratio.
+    columns:
+      - name: trade_sk
+        tests: [unique, not_null]
+      - name: area_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_area')
+              field: area_key
+      - name: item_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_item')
+              field: item_key
+      - name: year_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_year')
+              field: year_key
+      - name: import_dependency_ratio_pct
+        description: 0–200%; NULL when production unavailable.
+
+  - name: fct_food_security
+    description: Country-level DES and macronutrient fact table.
+    columns:
+      - name: food_security_sk
+        tests: [unique, not_null]
+      - name: area_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_area')
+              field: area_key
+      - name: year_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_year')
+              field: year_key
+      - name: des_kcal_cap_day
+        description: Must be positive. NULL excluded at model level.
+      - name: des_category
+        tests:
+          - accepted_values:
+              values: ['Severely Inadequate', 'Inadequate', 'Borderline Adequate',
+                       'Adequate', 'Abundant', 'No Data']
+      - name: is_food_secure
+        description: True if DES >= 2,100 kcal/capita/day.

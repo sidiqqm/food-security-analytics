@@ -93,15 +93,11 @@ final as (
             else 0
         end as income_group_order,
 
-        case 
-            when income_group in ('High income', 'Upper middle income')
-                then 'Higher Income'
-
-            when income_group in ('Lower middle income', 'Low income')
-                then 'Lower Income'
-
+        case
+            when income_group in ('High income', 'Upper middle income') then 'Developed/Emerging'
+            when income_group in ('Lower middle income', 'Low income')  then 'Developing/LDC'
             else 'Not Classified'
-        end as income_group_category,
+        end as development_status,
 
         current_timestamp() as _dim_updated_at
 

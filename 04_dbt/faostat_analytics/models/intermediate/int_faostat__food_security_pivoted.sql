@@ -118,7 +118,7 @@ with_derived as (
             when des_kcal_cap_day < 2500 then 'Borderline Adequate'
             when des_kcal_cap_day < 3000 then 'Adequate'
             else 'Abundant'
-        end as des_category
+        end as des_category,
 
         case
             when des_kcal_cap_day is null then 0

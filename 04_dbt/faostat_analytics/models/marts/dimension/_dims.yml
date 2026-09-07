@@ -1,0 +1,51 @@
+version: 2
+
+models:
+
+  - name: dim_area
+    description: Geographic area dimension — countries and regional aggregates.
+    columns:
+      - name: area_key
+        tests: [unique, not_null]
+      - name: area_code
+        tests: [unique, not_null]
+      - name: area_name
+        tests: [not_null]
+      - name: area_type
+        tests:
+          - accepted_values:
+              values: ['Country', 'Sub-Regional Group', 'Global/Major Region']
+      - name: is_country
+        tests: [not_null]
+
+  - name: dim_item
+    description: Commodity item dimension — QCL items with strategic flags.
+    columns:
+      - name: item_key
+        tests: [unique, not_null]
+      - name: item_code
+        tests: [unique, not_null]
+      - name: item_name
+        tests: [not_null]
+      - name: is_strategic_commodity
+        tests: [not_null]
+
+  - name: dim_element
+    description: Measurement element dimension.
+    columns:
+      - name: element_key
+        tests: [unique, not_null]
+      - name: element_code
+        tests: [not_null]
+      - name: measurement_type
+        tests:
+          - accepted_values:
+              values: ['Volume', 'Ratio', 'Value', 'Per Capita', 'Other']
+
+  - name: dim_year
+    description: Calendar year dimension with period attributes.
+    columns:
+      - name: year_key
+        tests: [unique, not_null]
+      - name: year
+        tests: [unique, not_null]
