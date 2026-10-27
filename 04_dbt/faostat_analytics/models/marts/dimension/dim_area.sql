@@ -2,19 +2,6 @@
     config(
         materialized = 'table',
         description  = """
-            Dimension table: Geographic areas (countries and regional aggregates).
-
-            Sources:
-            - stg_faostat__production (to get all areas present in production data)
-            - seed_fao_regions (for regional mapping, income group, geographic region)
-
-            Scope: ALL areas including regional aggregates.
-            Use is_country = true to filter to individual countries only.
-
-            Slowly Changing Dimension Type 1 (SCD1):
-            - No history tracking; current attributes only.
-            - Country names and classifications reflect latest available data.
-
             Grain: One row per area_code (unique area identifier).
         """
     )

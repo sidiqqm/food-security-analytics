@@ -3,22 +3,7 @@
         materialized = 'table',
         description  = """
             Fact table: Agricultural trade flows and Import Dependency Ratio.
-
             Grain: One row per (area × item × year)
-            — individual countries only, project period only (1991–2022).
-
-            Measures:
-            - export_qty_tonnes, import_qty_tonnes: trade volumes
-            - export_val_1000usd, import_val_1000usd: trade values (nominal USD)
-            - net_trade_qty_tonnes: export - import (positive = net exporter)
-            - net_trade_val_1000usd: export value - import value
-            - import_dependency_ratio_pct: % of domestic supply sourced from imports
-            - trade_coverage_ratio_pct: export value / import value × 100
-
-            Important Limitations:
-            - Values in 1000 USD are nominal (not inflation-adjusted)
-            - IDR requires production data; NULL where production unavailable
-            - IDR capped at 200% to handle data anomalies
         """
     )
 }}

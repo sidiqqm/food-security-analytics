@@ -11,7 +11,7 @@
     )
 }}
 
--- Generate year spine from 1991 to 2022
+-- Generate year spine dari 1991 to 2022
 with year_spine as (
 
     {{

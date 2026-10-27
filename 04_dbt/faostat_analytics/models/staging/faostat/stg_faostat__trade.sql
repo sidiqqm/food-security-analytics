@@ -2,23 +2,8 @@
     config(
         materialized = 'view',
         description  = """
-            Staging model for FAOSTAT Trade domain (TCL).
-            Source: raw_faostat.trade_crops_livestock_raw
-
-            Transformations applied:
-            1. Column renaming and type casting
-            2. Flag standardization and quality scoring
-            3. Area type classification (country vs. regional aggregate)
-            4. Element categorization (export_qty, export_val, import_qty, import_val)
-            5. Trade direction labeling (Export vs. Import)
-            6. Note: Values remain in original units (t for quantity, 1000 USD for value)
-               Unit conversion to USD is a business decision made in intermediate layer.
-
             Grain: One row per (area_code × item_code × element_code × year)
             Primary Key: trade_sk (surrogate key)
-
-            Currency note: All monetary values are in nominal USD (1000 USD units).
-            Inflation adjustment is NOT performed — document as limitation.
         """
     )
 }}
@@ -95,9 +80,6 @@ with_derived as (
             else false
         end as is_country,
 
-        -- Categorize elements into:
-        -- - Trade direction: Export vs. Import
-        -- - Measurement type: Quantity vs. Value
         case element_code
             when {{ var('element_code_export_qty') }} then 'export_quantity'
             when {{ var('element_code_export_val') }} then 'export_value'
@@ -132,9 +114,6 @@ with_derived as (
             else 'Other'
         end as measurement_type,
 
-        -- STANDARDIZED UNIT LABELS
-        -- Values are NOT converted here — units are documented clearly.
-        -- Conversion to full USD (×1000) done in intermediate if needed.
         case
             when element_code in (
                 {{ var('element_code_export_qty') }},
@@ -147,7 +126,6 @@ with_derived as (
             else unit_original
         end as unit_standardized,
 
-        -- No unit conversion needed at staging — value stays
         value_original as value_standardized,
         
         case

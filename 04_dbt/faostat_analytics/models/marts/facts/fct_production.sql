@@ -3,27 +3,7 @@
         materialized = 'table',
         description  = """
             Fact table: Agricultural production measurements.
-
             Grain: One row per (area × item × year)
-            — individual countries only, project period only (1991–2022),
-            — all items (not filtered to strategic commodities)
-              to preserve flexibility for ad-hoc analysis.
-
-            Measures:
-            - production_tonnes: total production in metric tonnes
-            - area_harvested_ha: harvested area in hectares
-            - yield_kg_ha: yield (production per harvested area) in kg/ha
-
-            Foreign Keys → Dimension Tables:
-            - area_key → dim_area
-            - item_key → dim_item
-            - year_key → dim_year
-
-            Data Quality:
-            - Rows with all three measures missing are excluded.
-            - Partial rows (e.g., only production, no yield) are included
-              with NULL for missing measures.
-            - quality_score_avg reflects average flag quality across measures.
         """
     )
 }}
@@ -40,7 +20,6 @@ dim_area as (
     select
         area_code,
         area_key
-
     from {{ ref('dim_area') }}
 
 ),
@@ -51,7 +30,6 @@ dim_item as (
         item_code,
         item_key,
         is_strategic_commodity
-
     from {{ ref('dim_item') }}
 
 ),
@@ -61,7 +39,6 @@ dim_year as (
     select
         year,
         year_key
-
     from {{ ref('dim_year') }}
 
 ),
@@ -127,7 +104,6 @@ final as (
 
     left join dim_year dy
         on p.year = dy.year
-
 )
 
 select *

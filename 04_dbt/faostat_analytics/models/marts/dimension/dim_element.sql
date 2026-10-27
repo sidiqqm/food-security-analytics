@@ -2,13 +2,6 @@
     config(
         materialized = 'table',
         description  = """
-            Dimension table: Measurement elements across all FAOSTAT datasets.
-
-            Contains all element codes and their descriptions from:
-            - Production (QCL): Area Harvested, Yield, Production
-            - Trade (TCL): Export/Import Quantity and Value
-            - Food Balance Sheets (FBS): DES, Protein, Fat, Food Supply
-
             Grain: One row per (dataset_source, element_code).
         """
     )
@@ -190,24 +183,20 @@ final as (
                 'export_quantity',
                 'import_quantity',
                 'food_quantity'
-            )
-                then 'Volume'
+            ) then 'Volume'
 
-            when element_category = 'yield'
-                then 'Ratio'
+            when element_category = 'yield' then 'Ratio'
 
             when element_category in (
                 'export_value',
                 'import_value'
-            )
-                then 'Value'
+            ) then 'Value'
 
             when element_category in (
                 'dietary_energy_supply',
                 'protein_supply',
                 'fat_supply'
-            )
-                then 'Per Capita'
+            ) then 'Per Capita'
 
             else 'Other'
         end as measurement_type,

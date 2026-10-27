@@ -46,14 +46,10 @@ global_aggregates as (
         item_name,
         year,
 
-        -- ── GLOBAL TOTALS ──
         sum(production_tonnes) as total_production_tonnes,
         sum(area_harvested_ha) as total_area_harvested_ha,
         count(distinct area_code) as country_count_with_data,
 
-        -- ── PRODUCTION-WEIGHTED AVERAGE YIELD ──
-        -- Simple average of yield would be misleading (gives equal weight to
-        -- small and large producers). Weighted by area harvested is more accurate.
         round(
             safe_divide(
                 sum(production_tonnes),
@@ -71,22 +67,16 @@ global_aggregates as (
 
 ),
 
--- ─────────────────────────────────────────────────────────────────────────────
--- YEAR-OVER-YEAR GROWTH using BigQuery window function LAG
--- ─────────────────────────────────────────────────────────────────────────────
-
 with_yoy as (
 
     select
         *,
 
-        -- Previous year production (for YoY calculation)
         lag(total_production_tonnes, 1) over (
             partition by item_code
             order by year
         ) as prev_year_production_tonnes,
 
-        -- Production 10 years ago (for CAGR calculation)
         lag(total_production_tonnes, 10) over (
             partition by item_code
             order by year
@@ -101,7 +91,6 @@ with_growth_metrics as (
     select
         *,
 
-        -- ── YoY PRODUCTION GROWTH (%) ──
         round(
             safe_divide(
                 total_production_tonnes - prev_year_production_tonnes,
@@ -110,9 +99,6 @@ with_growth_metrics as (
             2
         ) as yoy_production_growth_pct,
 
-        -- ── 10-YEAR CAGR (%) ──
-        -- Formula: (Current / Base)^(1/n) - 1
-        -- n = 10 years
         round(
             (
                 pow(
@@ -126,11 +112,6 @@ with_growth_metrics as (
             2
         ) as cagr_10y_pct,
 
-        -- ── PRODUCTION INDEX (base year = 2000) ──
-        -- Normalizes production to 100 in year 2000 for cross-commodity comparison
-        -- This is computed later in Power BI using DAX or here via subquery
-
-        -- ── DISPLAY METRICS (human-readable) ──
         round(
             total_production_tonnes / 1e6,
             3
@@ -145,7 +126,6 @@ with_growth_metrics as (
 
 ),
 
--- Join with dim tables for additional context
 with_dim_info as (
 
     select

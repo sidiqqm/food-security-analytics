@@ -1,21 +1,19 @@
+-- 1.  Import Dependency Ratio (IDR) membutuhkan data produksi dari stg_faostat__production yang di-join berdasarkan:
+--     area_code, item_code, year
+--     Jika data produksi tidak tersedia untuk kombinasi negara–komoditas–tahun tersebut, 
+--     maka nilai IDR harus NULL, bukan diimputasi atau diestimasi.
+-- 2. Net Trade = Export - Import. Negative = net importer.
+-- 3. Nilai IDR yang sangat tinggi dapat mengindikasikan masalah
+--     kualitas data (e.g., transit trade misclassification).
+-- 4. Nilai tetap menggunakan satuan asli: tonnes and 1000 USD.
+--    Jangan mengubah 1000 USD to USD disini — lakukan di reporting layer.
+-- Grain: One row per (area_code × item_code × year)
+-- Problem : null harus tetap null jangan ubah jadi 0
+
 {{
     config(
         materialized = 'view',
         description  = """
-            Business Rules:
-            1.  Import Dependency Ratio (IDR) membutuhkan data produksi dari stg_faostat__production yang di-join berdasarkan:
-                area_code, item_code, year
-                Jika data produksi tidak tersedia untuk kombinasi negara–komoditas–tahun tersebut, 
-                maka nilai IDR harus NULL, bukan diimputasi atau diestimasi.
-            2. Net Trade = Export - Import. Negative = net importer.
-            3. Nilai IDR yang sangat tinggi dapat mengindikasikan masalah
-                kualitas data (e.g., transit trade misclassification).
-            4. Nilai tetap menggunakan satuan asli: tonnes and 1000 USD.
-               Jangan mengubah 1000 USD to USD disini — lakukan di reporting layer.
-
-            Grain: One row per (area_code × item_code × year)
-
-            Problem : null harus tetap null jangan ubah jadi 0
         """
     )
 }}
@@ -48,7 +46,7 @@ stg_production_for_idr as (
 
 ),
 
--- PIVOT trade elements from long to wide
+-- PIVOT trade from long to wide
 trade_pivoted as (
 
     select
@@ -58,7 +56,6 @@ trade_pivoted as (
         item_name,
         year,
 
-        -- EXPORT QUANTITY (tonnes)
         max(case when element_category = 'export_quantity'
                  then value_standardized end) as export_qty_tonnes,
         max(case when element_category = 'export_quantity'
@@ -66,13 +63,11 @@ trade_pivoted as (
         max(case when element_category = 'export_quantity'
                  then flag_quality_score end) as quality_score_export_qty,
 
-        -- EXPORT VALUE (1000 USD)
         max(case when element_category = 'export_value'
                  then value_standardized end) as export_val_1000usd,
         max(case when element_category = 'export_value'
                  then flag_code end) as flag_export_val,
 
-        -- IMPORT QUANTITY (tonnes)
         max(case when element_category = 'import_quantity'
                  then value_standardized end) as import_qty_tonnes,
         max(case when element_category = 'import_quantity'
@@ -80,7 +75,6 @@ trade_pivoted as (
         max(case when element_category = 'import_quantity'
                  then flag_quality_score end) as quality_score_import_qty,
 
-        -- IMPORT VALUE (1000 USD)
         max(case when element_category = 'import_value'
                  then value_standardized end) as import_val_1000usd,
         max(case when element_category = 'import_value'
@@ -95,8 +89,6 @@ trade_pivoted as (
         year
 ),
 
--- JOIN with production data for IDR calculation
--- LEFT JOIN: preserve all trade records even without production match
 trade_with_production as (
 
     select
@@ -112,7 +104,6 @@ trade_with_production as (
 
 ),
 
--- DERIVED KPIs
 with_kpis as (
 
     select
@@ -122,25 +113,10 @@ with_kpis as (
 
         *,
 
-        -- NET TRADE QUANTITY (tonnes)
-        -- Positive = net exporter | Negative = net importer
         coalesce(export_qty_tonnes, 0) - coalesce(import_qty_tonnes, 0) as net_trade_qty_tonnes,
 
-        -- NET TRADE VALUE (1000 USD)
         coalesce(export_val_1000usd, 0) - coalesce(import_val_1000usd, 0) as net_trade_val_1000usd,
 
-        -- IMPORT DEPENDENCY RATIO (%)
-        -- Formula: Import / (Production + Import - Export) × 100
-        -- Denominator = Domestic Utilization (total available supply for domestic use)
-        --
-        -- Business Rule: Cap IDR at 200% to handle data anomalies.
-        -- IDR > 100% is mathematically possible when export > production
-        -- (e.g., country re-exports imported goods), but > 200% likely
-        -- indicates data quality issues.
-        --
-        -- IDR is NULL when:
-        -- - Production data is unavailable (cannot compute denominator)
-        -- - Domestic utilization = 0 (division by zero → food security crisis signal)
         round(
             least(
                 safe_divide(
@@ -152,14 +128,11 @@ with_kpis as (
                         0
                     )
                 ) * 100,
-                200.0   -- Cap at 200%
+                200.0
             ),
             2
         ) as import_dependency_ratio_pct,
 
-        -- TRADE COVERAGE RATIO
-        -- Export Value / Import Value × 100
-        -- > 100 means exports more than pay for imports (trade surplus)
         round(
             safe_divide(
                 coalesce(export_val_1000usd, 0),
@@ -168,7 +141,6 @@ with_kpis as (
             2
         ) as trade_coverage_ratio_pct,
 
-        -- NET EXPORTER FLAG
         case
             when coalesce(export_qty_tonnes, 0) >
                  coalesce(import_qty_tonnes, 0)
@@ -176,7 +148,6 @@ with_kpis as (
             else false
         end as is_net_exporter,
 
-        -- AVERAGE QUALITY SCORE
         round(
             (
                 coalesce(quality_score_export_qty, 0) +
@@ -189,10 +160,9 @@ with_kpis as (
             2
         ) as quality_score_avg,
 
-        -- DATA AVAILABILITY FLAGS
-        case when export_qty_tonnes  is not null then true else false end as has_export_data,
-        case when import_qty_tonnes  is not null then true else false end as has_import_data,
-        case when production_tonnes  is not null then true else false end as has_production_for_idr
+        case when export_qty_tonnes is not null then true else false end as has_export_data,
+        case when import_qty_tonnes is not null then true else false end as has_import_data,
+        case when production_tonnes is not null then true else false end as has_production_for_idr
 
     from trade_with_production
 

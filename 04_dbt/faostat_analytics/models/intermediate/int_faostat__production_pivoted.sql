@@ -1,24 +1,12 @@
+-- Output: Wide format — one row per (area × item × year)
+--         with production_tonnes, area_harvested_ha, yield_kg_ha as columns.
+
+-- Grain: One row per (area_code × item_code × year)
+
 {{
     config(
         materialized = 'view',
         description  = """
-            Output: Wide format — one row per (area × item × year)
-                    with production_tonnes, area_harvested_ha, yield_kg_ha as columns.
-
-            Scope:
-            - Individual countries only (is_country = true)
-            - Project period only (is_in_project_period = true)
-            - All items (filtering to strategic commodities done in fct_production)
-            - Non-missing values preferred; NULL kept where no data available
-
-            Grain: One row per (area_code × item_code × year)
-
-            Business Rules:
-            1. If production value exists but yield is missing, yield is NOT imputed.
-               Missing data is preserved transparently.
-            2. Quality scores are averaged across the three element measures.
-               If only one element has data, score reflects that element only.
-            3. Rows where ALL THREE elements are missing are excluded to reduce noise.
         """
     )
 }}

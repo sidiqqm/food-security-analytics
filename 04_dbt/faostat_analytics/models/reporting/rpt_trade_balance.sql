@@ -3,8 +3,6 @@
         materialized = 'table',
         description  = """
             Reporting table: Trade balance and Import Dependency analysis.
-            Pre-aggregated for Power BI Trade and Operational dashboards.
-
             Grain: One row per (area × item × year) — country level.
             Scope: Strategic commodities, individual countries, 1991–2022.
         """

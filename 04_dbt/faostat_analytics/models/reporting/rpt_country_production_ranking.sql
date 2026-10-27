@@ -2,9 +2,6 @@
     config(
         materialized = 'table',
         description  = """
-            Reporting table: Country production rankings per commodity per year.
-            Enables Power BI bar chart rankings and drillthrough.
-
             Grain: One row per (area × item × year).
             Scope: Strategic commodities, individual countries, 1991–2022.
             Includes rank within year × commodity for each country.
@@ -33,8 +30,8 @@ with fct_prod as (
 
     where
         p.is_strategic_commodity = true
-        and p.has_production = true
-        and p.production_tonnes > 0
+            and p.has_production = true
+            and p.production_tonnes > 0
 
 ),
 

@@ -68,7 +68,6 @@ with_fbs_mapping as (
             else null
         end as fbs_item_name,
 
-        -- Commodity group order for Power BI sorting
         case commodity_group
             when 'Cereals' then 1
             when 'Protein Crops' then 2
@@ -76,7 +75,7 @@ with_fbs_mapping as (
             when 'Oil Crops' then 4
             when 'Sugar Crops' then 5
             else 9
-        end                                                 as commodity_group_order
+        end as commodity_group_order
 
     from with_commodity_info
 
@@ -85,25 +84,20 @@ with_fbs_mapping as (
 final as (
 
     select
-        -- ── SURROGATE KEY ──
-        {{ dbt_utils.generate_surrogate_key(['item_code']) }}   as item_key,
+        {{ dbt_utils.generate_surrogate_key(['item_code']) }} as item_key,
 
-        -- ── QCL CODES (Primary) ──
         item_code,
         item_name,
 
-        -- ── FBS CODES (For cross-dataset reference) ──
         fbs_item_code,
         fbs_item_name,
 
-        -- ── COMMODITY CLASSIFICATION ──
         commodity_group,
         commodity_group_order,
         strategic_reason,
         is_strategic_commodity,
 
-        -- ── METADATA ──
-        current_timestamp()                                     as _dim_updated_at
+        current_timestamp() as _dim_updated_at
 
     from with_fbs_mapping
 

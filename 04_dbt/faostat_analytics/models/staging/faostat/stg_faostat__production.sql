@@ -1,3 +1,10 @@
+        -- UNIT STANDARDIZATION
+        -- Yield di FAOSTAT pake hg/ha (hectogram per hectare) yang dimana satuan yang jarang digunakan
+        -- mengubahnya ke kg/ha akan membuat interpretability.
+
+        -- Conversion: 1 hg = 100g = 0.1 kg
+        --   hg/ha ÷ 10 = kg/ha
+
 {{
     config(
         materialized = 'view',
@@ -76,9 +83,6 @@ with_derived as (
             else false
         end as is_estimated,
 
-        -- AREA CLASSIFICATION
-        -- Always use `where is_country = true` for country-level analysis.
-
         {{ area_type('area_code') }} as area_type,
 
         -- Boolean: is this an individual country (not a regional aggregate)?
@@ -87,8 +91,6 @@ with_derived as (
             else false
         end as is_country,
 
-        -- ELEMENT CLASSIFICATION
-        -- Standardized category labels for filtering in downstream models.
         case element_code
             when {{ var('element_code_area_harvested') }} then 'area_harvested'
             when {{ var('element_code_yield') }} then 'yield'
@@ -96,26 +98,19 @@ with_derived as (
             else 'other'
         end as element_category,
 
-        -- UNIT STANDARDIZATION
-        -- Yield di FAOSTAT pake hg/ha (hectogram per hectare) yang dimana satuan yang jarang digunakan
-        -- mengubahnya ke kg/ha akan membuat interpretability.
-
-        -- Conversion: 1 hg = 100g = 0.1 kg
-        --   hg/ha ÷ 10 = kg/ha
-
         -- Production (t) and Area Harvested (ha): gak butuh dikonversi.
         case
             when element_code = {{ var('element_code_yield') }}
                 then value_original / 10.0   -- hg/ha → kg/ha
             else
-                value_original               -- t or ha: no change
+                value_original
         end as value_standardized,
 
         case
             when element_code = {{ var('element_code_area_harvested') }}
                 then 'ha'
             when element_code = {{ var('element_code_yield') }}
-                then 'kg/ha'                         -- Converted from hg/ha
+                then 'kg/ha'
             when element_code = {{ var('element_code_production') }}
                 then 'tonnes'
             else unit_original

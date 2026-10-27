@@ -32,7 +32,6 @@ dim_year as (
 
 ),
 
--- Previous year DES for YoY change calculation
 with_lag as (
 
     select

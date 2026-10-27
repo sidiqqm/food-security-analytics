@@ -3,20 +3,7 @@
         materialized = 'table',
         description  = """
             Fact table: National food security and dietary adequacy indicators.
-
             Grain: One row per (area × year)
-            — individual countries only, FBS period only (2010–2022).
-            Based on FBS Grand Total (item_code 2901) which aggregates all commodities.
-
-            Measures:
-            - des_kcal_cap_day: Dietary Energy Supply (primary food security KPI)
-            - protein_g_cap_day, fat_g_cap_day: macronutrient supply
-            - food_qty_kg_cap_yr: total food quantity per capita per year
-            - des_adequacy_ratio: DES vs. FAO 2100 kcal minimum benchmark
-            - des_category: categorical food security classification
-
-            Note: No item_key FK because this fact uses Grand Total (all items combined).
-            Use fct_production for commodity-level analysis.
         """
     )
 }}
@@ -33,7 +20,6 @@ dim_area as (
     select
         area_code,
         area_key
-
     from {{ ref('dim_area') }}
 
 ),
@@ -43,7 +29,6 @@ dim_year as (
     select
         year,
         year_key
-
     from {{ ref('dim_year') }}
 
 ),
@@ -51,7 +36,6 @@ dim_year as (
 final as (
 
     select
-
         {{
             dbt_utils.generate_surrogate_key([
                 'f.area_code',

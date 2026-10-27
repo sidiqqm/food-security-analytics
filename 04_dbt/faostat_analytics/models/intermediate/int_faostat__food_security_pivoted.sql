@@ -36,7 +36,6 @@ with stg_fbs as (
 
 ),
 
--- PIVOT food security elements from long to wide
 fbs_pivoted as (
 
     select
@@ -90,7 +89,7 @@ with_derived as (
 
         -- DES ADEQUACY RATIO
         -- Analytical benchmark: 2,100 kcal/capita/day
-        -- Digunakan sebagai ambang batas tetap (fixed threshold) untuk membandingkan DES antarnegara.
+        -- sebagai ambang batas tetap (fixed threshold) untuk membandingkan DES antarnegara.
         -- Ratio > 1,0 = pasokan makanan memadai pada tingkat populasi.
         -- Ratio < 1,0 = pasokan makanan tidak memadai, sehingga terdapat risiko food insecurity atau kerawanan pangan.
         round(
@@ -98,19 +97,11 @@ with_derived as (
             3
         ) as des_adequacy_ratio,
 
-        -- DES ADEQUACY PERCENTAGE
         round(
             safe_divide(des_kcal_cap_day, 2100.0) * 100,
             1
         ) as des_adequacy_pct,
 
-        -- DES CATEGORY
-        -- Custom classification benchmark aligned with general FAO/WHO energy requirement ranges
-        -- < 1,800: Severely Inadequate (extreme food insecurity)
-        -- 1,800 – 2,099: Inadequate (below minimum requirement)
-        -- 2,100 – 2,499: Borderline Adequate
-        -- 2,500 – 2,999: Adequate
-        -- ≥ 3,000: Abundant
         case
             when des_kcal_cap_day is null then 'No Data'
             when des_kcal_cap_day < 1800 then 'Severely Inadequate'
@@ -135,7 +126,6 @@ with_derived as (
             1
         ) as protein_adequacy_pct,
 
-        -- MACRONUTRIENT ENERGY COMPOSITION
         -- Perkiraan persentase kalori DES yang berasal dari:
         -- Protein, Lemak ,Karbohidrat
         -- Lemak menghasilkan 9 kkal per gram
@@ -159,7 +149,6 @@ with_derived as (
             1
         ) as pct_kcal_from_carbs,
 
-        -- IS FOOD SECURE (population-level proxy)
         case
             when des_kcal_cap_day >= 2100 then true
             when des_kcal_cap_day is null then null
