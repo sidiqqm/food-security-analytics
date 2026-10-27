@@ -76,8 +76,6 @@ Pembuat kebijakan menghadapi tiga pertanyaan utama yang belum terjawab secara si
 7. Adakah kesenjangan signifikan antara wilayah berpenghasilan tinggi dan rendah?
 8. Apa hubungan antara produksi domestik dan kecukupan gizi?
 
-### Forecasting
-9. Proyeksi produksi komoditas utama untuk 2025–2027?
 
 ---
 
@@ -95,20 +93,7 @@ Pembuat kebijakan menghadapi tiga pertanyaan utama yang belum terjawab secara si
 
 ---
 
-## 7. Success Metrics
-
-| Dimension | Criteria |
-|---|---|
-| Completeness | Seluruh 15 komponen wajib selesai |
-| Data Coverage | ≥50 negara, ≥10 komoditas, 1991–2022 |
-| Dashboard Usability | Dapat dibaca stakeholder non-teknis |
-| Statistical Rigor | Setiap test disertai interpretasi bisnis |
-| Reproducibility | Seluruh transformasi via dbt |
-| Documentation | README cukup untuk replikasi |
-
----
-
-## 8. Scope
+## 7. Scope
 
 ### In Scope
 - Produksi pertanian (crops, livestock secondary)
@@ -125,26 +110,3 @@ Pembuat kebijakan menghadapi tiga pertanyaan utama yang belum terjawab secara si
 - Kebijakan subsidi per negara
 
 ---
-
-## 9. Assumptions
-
-| # | Assumption | Justification |
-|---|---|---|
-| A1 | Data Flag "A" dianggap akurat | FAO adalah sumber paling otoritatif |
-| A2 | Data Flag "E" digunakan namun ditandai | Metodologi estimasi standar internasional |
-| A3 | Agregasi regional merupakan turunan negara anggota | Sesuai metodologi FAO |
-| A4 | Satuan ton = metric ton (1.000 kg) | Standar FAOSTAT |
-| A5 | Nilai perdagangan dalam USD nominal | Fokus pada volume, bukan nilai riil |
-| A6 | Perubahan definisi negara ditangani di staging | Dicatat dalam data dictionary |
-
----
-
-## 10. Risks
-
-| Risk | Probability | Impact | Mitigation |
-|---|---|---|---|
-| Data tidak tersedia negara tertentu | Tinggi | Sedang | Dokumentasi missing pattern |
-| Perubahan metodologi FAO | Sedang | Tinggi | Periksa metadata; catat dalam dokumentasi |
-| Inkonsistensi satuan antar dataset | Sedang | Tinggi | Standardisasi di dbt staging |
-| Over-interpretation data estimasi | Sedang | Tinggi | Selalu sertakan caveat |
-| Double-count agregat regional | Tinggi | Tinggi | Filter eksplisit di staging |
