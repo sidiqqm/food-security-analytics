@@ -1,15 +1,3 @@
-"""
-=============================================================================
-Script 3: Verify BigQuery Upload & Run Initial SQL Checks
-=============================================================================
-Project  : Global Food Security Analytics
-Purpose  : Post-upload verification via BigQuery SQL queries.
-           Confirms data integrity, checks sample rows, and validates
-           that raw tables are queryable and complete.
-Run      : python 03_verify_upload.py
-=============================================================================
-"""
-
 import sys
 import logging
 import pandas as pd

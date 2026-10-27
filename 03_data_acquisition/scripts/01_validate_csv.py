@@ -477,10 +477,6 @@ def compute_file_hash(path: Path) -> str:
     return hasher.hexdigest()
 
 
-# =============================================================================
-# MAIN VALIDATION RUNNER
-# =============================================================================
-
 def validate_dataset(name: str, cfg: dict) -> ValidationResult:
     """Run all validation checks for one dataset."""
     result = ValidationResult(name)

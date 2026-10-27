@@ -77,8 +77,8 @@ DATASETS = {
 }
 
 # Upload settings
-CHUNK_SIZE    = 100_000     # Rows per upload chunk (untuk dataset besar)
-WRITE_MODE    = 'WRITE_TRUNCATE'  # WRITE_TRUNCATE = replace existing data
+CHUNK_SIZE = 100_000
+WRITE_MODE = 'WRITE_TRUNCATE'
 
 # LOGGING
 log_file = OUTPUT_DIR / 'upload_log.txt'
@@ -354,11 +354,7 @@ def upload_to_bigquery(
     finally:
         os.unlink(tmp_path)  # Cleanup temp file
 
-
-# =============================================================================
 # RECONCILIATION
-# =============================================================================
-
 def reconcile_row_counts(
     csv_row_count: int,
     bq_row_count: int,
@@ -394,11 +390,7 @@ def reconcile_row_counts(
 
     return result
 
-
-# =============================================================================
 # MAIN
-# =============================================================================
-
 def main():
     logger.info("=" * 60)
     logger.info("FAOSTAT → BIGQUERY RAW LAYER UPLOAD")
